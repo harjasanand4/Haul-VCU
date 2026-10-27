@@ -1,0 +1,144 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {name: "Linux GCC 13", os: ubuntu-24.04, cc: gcc-13, cxx: g++-13}
+          - {name: "Linux Clang 18", os: ubuntu-24.04, cc: clang-18, cxx: clang++-18}
+          - {name: "macOS AppleClang", os: macos-14, cc: clang, cxx: clang++}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Ninja
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then sudo apt-get update -q && sudo apt-get install -y -q ninja-build; else brew install ninja; fi
+      - name: Configure (warnings are errors)
+        env: {CC: "${{ matrix.cc }}", CXX: "${{ matrix.cxx }}"}
+        run: cmake --preset release
+      - name: Build
+        run: cmake --build --preset release
+      - name: Unit, integration and scenario tests
+        run: ctest --preset release --output-junit junit-tests.xml
+      - name: Benchmarks (informational)
+        run: ./build/release/haul-bench
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.os }}-${{ matrix.cc }}
+          path: build/release/junit-tests.xml
+
+  sanitizers:
+    name: ${{ matrix.preset }} sanitizer
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [asan, tsan]
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update -q && sudo apt-get install -y -q ninja-build
+      # Newer runner kernels use more ASLR entropy than older TSan builds expect.
+      - run: sudo sysctl vm.mmap_rnd_bits=28
+      - run: cmake --preset ${{ matrix.preset }}
+      - run: cmake --build --preset ${{ matrix.preset }}
+      - run: ctest --preset ${{ matrix.preset }}
+
+  scenarios:
+    name: SIL scenario suite + codec cross-check
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: sudo apt-get update -q && sudo apt-get install -y -q ninja-build
+      - run: pip install -r tools/requirements.txt
+      - run: cmake --preset release && cmake --build --preset release
+      - name: Run every scenario, write CSV + JUnit + summary
+        run: |
+          ./build/release/haul-sim --out results scenarios/*.json
+          cat results/summary.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Ablations (expected to be worse; informational)
+        run: |
+          ./build/release/haul-sim --quiet --out results/no_lead --cal drive_lag_s=0 scenarios/13_speed_steps_empty.json || true
+          ./build/release/haul-sim --quiet --out results/no_grade_ff --cal grade_feedforward=0 scenarios/02_ramp_climb_loaded.json || true
+      - name: Cross-check DBC codec and E2E CRCs against cantools / an independent CRC
+        run: |
+          ./build/release/haul-sim --quiet --candump haul_cycle.log scenarios/14_haul_cycle.json
+          python tools/crosscheck_dbc.py --haul-can build/release/haul-can --n 2000 --candump haul_cycle.log
+      - name: Plots
+        run: python tools/plot_run.py readme --results results --out plots
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sil-results
+          path: |
+            results/
+            plots/
+
+  socketcan:
+    name: SocketCAN on vcan0 (best effort)
+    runs-on: ubuntu-24.04
+    # Hosted runners don't always ship the vcan kernel module; don't fail the build over that.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update -q && sudo apt-get install -y -q ninja-build can-utils "linux-modules-extra-$(uname -r)"
+      - name: Create vcan0
+        run: |
+          sudo modprobe vcan
+          sudo ip link add dev vcan0 type vcan
+          sudo ip link set up vcan0
+      - run: cmake --preset release && cmake --build --preset release
+      - name: SocketCAN unit test
+        run: HAUL_TEST_VCAN=vcan0 ./build/release/tests/haul_tests --gtest_filter='SocketCan.*'
+      - name: VCU and truck as separate processes on vcan0, recorded with candump
+        run: |
+          candump -L vcan0 > vcan0.log & DUMP=$!
+          ./build/release/haul-truck --bus socketcan:vcan0 --target-kph 30 --payload-t 227 --duration 40 > truck.txt & TRUCK=$!
+          sleep 0.5
+          timeout -s INT 30 ./build/release/haul-vcu --bus socketcan:vcan0 --quiet --telemetry vcu.csv || true
+          kill -INT $TRUCK $DUMP || true
+          sleep 0.5
+          tail -n 12 truck.txt
+          ./build/release/haul-can decode vcan0.log | tail -n 5
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: socketcan-run
+          path: |
+            vcan0.log
+            vcu.csv
+            truck.txt
+
+  lint:
+    name: clang-format + clang-tidy
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update -q && sudo apt-get install -y -q ninja-build clang-format-18 clang-tidy-18
+      - name: Formatting
+        run: clang-format-18 --dry-run --Werror $(git ls-files '*.cpp' '*.hpp')
+      - name: Static analysis
+        run: |
+          CC=clang-18 CXX=clang++-18 cmake --preset debug
+          clang-tidy-18 -p build/debug --quiet $(git ls-files 'src/*.cpp' 'apps/*.cpp')
+
+  docker:
+    name: Docker image
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t haul-vcu .
+      - run: docker run --rm haul-vcu

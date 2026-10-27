@@ -1,0 +1,2 @@
+cantools>=39
+matplotlib>=3.8

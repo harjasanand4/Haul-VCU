@@ -1,0 +1,14 @@
+{
+  "name": "vcu_link_loss",
+  "description": "Commands from the VCU stop reaching the drive (cut harness). Nothing on the VCU side can help, so the truck-side watchdog takes over after 100 ms: traction off, brakes on. The VCU still sees the mismatch and latches a fault.",
+  "duration_s": 80,
+  "truck": {"payload_t": 227},
+  "road": [[0, 0]],
+  "mission": [{"t": 1, "target_kph": 35}],
+  "faults": [{"type": "drop", "message": "VcuCommand", "t": 50}],
+  "expect": [
+    {"check": "stopped_by", "by_s": 56},
+    {"check": "fault_raised", "fault": "ActuatorMismatch", "from_s": 50, "within_s": 2.0},
+    {"check": "state_reached", "state": "FAULT", "from_s": 50, "within_s": 10}
+  ]
+}

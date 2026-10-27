@@ -1,0 +1,15 @@
+{
+  "name": "drive_failure",
+  "description": "The traction drive fails while climbing a 6% ramp: it reports zero force whatever it's asked. The VCU compares requested and delivered force, flags ActuatorMismatch and safe-stops on the service brakes.",
+  "duration_s": 100,
+  "truck": {"payload_t": 227},
+  "road": [[0, 0], [150, 0], [180, 6], [3000, 6]],
+  "mission": [{"t": 1, "target_kph": 20}],
+  "faults": [{"type": "drive_failure", "t": 60}],
+  "expect": [
+    {"check": "fault_never", "fault": "ActuatorMismatch", "from_s": 1, "to_s": 60},
+    {"check": "fault_raised", "fault": "ActuatorMismatch", "from_s": 60, "within_s": 1.8},
+    {"check": "state_reached", "state": "SAFE_STOP", "from_s": 60, "within_s": 1.9},
+    {"check": "stopped_by", "by_s": 70}
+  ]
+}

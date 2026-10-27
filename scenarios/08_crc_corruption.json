@@ -1,0 +1,15 @@
+{
+  "name": "crc_corruption",
+  "description": "EMI on the wiring corrupts 20% of wheel speed frames for 6 s. The E2E check rejects every one of them (the CRC also covers the CAN ID), E2EError is raised, and because enough good frames still arrive the speed loop doesn't notice.",
+  "duration_s": 100,
+  "truck": {"payload_t": 227},
+  "road": [[0, 0]],
+  "mission": [{"t": 1, "target_kph": 35}],
+  "faults": [{"type": "corrupt_crc", "message": "WheelSpeeds", "t": 50, "duration_s": 6, "amount": 0.2}],
+  "expect": [
+    {"check": "fault_raised", "fault": "E2EError", "from_s": 50, "within_s": 1.0},
+    {"check": "fault_never", "fault": "WheelSpeedTimeout", "from_s": 1},
+    {"check": "speed_settles", "target_kph": 35, "tolerance_kph": 0.6, "from_s": 45},
+    {"check": "fault_never", "fault": "any_critical", "from_s": 1}
+  ]
+}

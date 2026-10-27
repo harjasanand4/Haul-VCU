@@ -1,0 +1,16 @@
+{
+  "name": "stale_imu",
+  "description": "The IMU keeps sending but its alive counter freezes: stale data. The VCU rejects the repeated frames, flags ImuTimeout, drops to the degraded limit and predicts speed without the accelerometer until it recovers.",
+  "duration_s": 100,
+  "truck": {"payload_t": 227},
+  "road": [[0, 0]],
+  "mission": [{"t": 1, "target_kph": 30}],
+  "faults": [{"type": "freeze_counter", "message": "Imu", "t": 50, "duration_s": 15}],
+  "expect": [
+    {"check": "fault_raised", "fault": "ImuTimeout", "from_s": 50, "within_s": 0.1},
+    {"check": "estimate_error", "limit_kph": 0.6, "from_s": 1},
+    {"check": "speed_between", "max_kph": 20.5, "from_s": 60, "to_s": 65},
+    {"check": "speed_settles", "target_kph": 30, "tolerance_kph": 0.6, "from_s": 90},
+    {"check": "fault_never", "fault": "any_critical", "from_s": 1}
+  ]
+}

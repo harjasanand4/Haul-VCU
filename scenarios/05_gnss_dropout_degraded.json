@@ -1,0 +1,16 @@
+{
+  "name": "gnss_dropout_degraded",
+  "description": "GNSS loses its fix for 40 s (a pit wall blocks the sky). That's a degraded mode, not a stop: the truck slows to the 20 km/h degraded limit and returns to 35 km/h once the fix is back.",
+  "duration_s": 160,
+  "truck": {"payload_t": 120},
+  "road": [[0, 0]],
+  "mission": [{"t": 1, "target_kph": 35}],
+  "faults": [{"type": "gnss_invalid", "t": 50, "duration_s": 40}],
+  "expect": [
+    {"check": "fault_raised", "fault": "GnssInvalid", "from_s": 50, "within_s": 0.5},
+    {"check": "speed_between", "max_kph": 20.5, "from_s": 70, "to_s": 90},
+    {"check": "speed_settles", "target_kph": 35, "tolerance_kph": 0.6, "from_s": 130},
+    {"check": "estimate_error", "limit_kph": 0.6, "from_s": 1},
+    {"check": "fault_never", "fault": "any_critical", "from_s": 1}
+  ]
+}

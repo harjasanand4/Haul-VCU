@@ -1,0 +1,27 @@
+# Static analysis run by CI (see .github/workflows/ci.yml). Warnings fail the job.
+Checks: >
+  -*,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-narrowing-conversions,
+  cert-err58-cpp,
+  clang-analyzer-*,
+  concurrency-*,
+  cppcoreguidelines-pro-type-member-init,
+  cppcoreguidelines-slicing,
+  cppcoreguidelines-virtual-class-destructor,
+  misc-redundant-expression,
+  misc-unused-using-decls,
+  modernize-use-nullptr,
+  modernize-use-override,
+  modernize-use-emplace,
+  modernize-loop-convert,
+  performance-*,
+  -performance-enum-size,
+  readability-container-size-empty,
+  readability-make-member-function-const,
+  readability-redundant-string-cstr,
+  readability-simplify-boolean-expr
+WarningsAsErrors: '*'
+HeaderFilterRegex: '.*/include/haul/.*'
+FormatStyle: file

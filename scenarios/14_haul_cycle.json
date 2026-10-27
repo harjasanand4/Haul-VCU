@@ -1,0 +1,19 @@
+{
+  "name": "haul_cycle",
+  "description": "A full loaded leg out of the pit: pull away, 25 km/h on the pit floor, 15 km/h up an 8% ramp, 40 km/h on the haul road at the top, then stop at the dump. Speed zones come from fleet management by position.",
+  "duration_s": 420,
+  "truck": {"payload_t": 227},
+  "road": [[0, 0], [300, 0], [340, 8], [900, 8], [940, 0], [5000, 0]],
+  "mission": [
+    {"t": 1, "target_kph": 25},
+    {"at_m": 230, "target_kph": 15},
+    {"at_m": 960, "target_kph": 40},
+    {"at_m": 2600, "target_kph": 0}
+  ],
+  "expect": [
+    {"check": "speed_between", "max_kph": 40.8},
+    {"check": "estimate_error", "limit_kph": 0.7, "from_s": 1},
+    {"check": "fault_never", "fault": "any_critical", "from_s": 1},
+    {"check": "state_reached", "state": "READY", "from_s": 60, "within_s": 400}
+  ]
+}

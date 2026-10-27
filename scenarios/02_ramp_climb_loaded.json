@@ -1,0 +1,19 @@
+{
+  "name": "ramp_climb_loaded",
+  "description": "Loaded truck leaves the pit floor and climbs a 10% ramp. Fleet management drops the target to 15 km/h for the ramp (a speed zone). The drive is close to its power limit; feedforward on the measured grade keeps the speed from sagging at the ramp toe.",
+  "duration_s": 220,
+  "truck": {"payload_t": 227},
+  "road": [[0, 0], [250, 0], [290, 10], [2000, 10]],
+  "mission": [
+    {"t": 1, "target_kph": 25},
+    {"at_m": 180, "target_kph": 15}
+  ],
+  "expect": [
+    {"check": "speed_between", "min_kph": 14.0, "max_kph": 15.6, "from_s": 45, "to_s": 220},
+    {"check": "speed_settles", "target_kph": 15, "tolerance_kph": 0.5, "from_s": 80, "to_s": 220},
+    {"check": "max_overshoot", "target_kph": 25, "limit_kph": 0.8},
+    {"check": "estimate_error", "limit_kph": 0.7, "from_s": 1},
+    {"check": "fault_never", "fault": "ActuatorMismatch", "from_s": 1},
+    {"check": "fault_never", "fault": "any_critical", "from_s": 1}
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "name": "emergency_stop",
+  "description": "The controller in the fleet management room hits the e-stop at 40 km/h. Full service brakes within one control cycle; the truck stays in FAULT until the e-stop is released and STOP is held.",
+  "duration_s": 90,
+  "truck": {"payload_t": 227},
+  "road": [[0, 0]],
+  "mission": [
+    {"t": 1, "target_kph": 40},
+    {"t": 50, "target_kph": 40, "estop": true},
+    {"t": 70, "target_kph": 0, "mode": "STOP"}
+  ],
+  "expect": [
+    {"check": "state_reached", "state": "EMERGENCY_STOP", "from_s": 50, "within_s": 0.12},
+    {"check": "stopped_by", "by_s": 56, "to_s": 70},
+    {"check": "state_reached", "state": "FAULT", "from_s": 70, "within_s": 0.1},
+    {"check": "state_reached", "state": "READY", "from_s": 70, "within_s": 1.5}
+  ]
+}

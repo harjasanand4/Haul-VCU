@@ -1,0 +1,21 @@
+{
+  "name": "wheel_sensor_failure",
+  "description": "The wheel speed ECU goes silent. The VCU keeps a speed estimate from GNSS and the IMU and carries on at the degraded limit. When GNSS also loses its fix there is no speed source left: safe stop, dead-reckoning on the IMU.",
+  "duration_s": 150,
+  "truck": {"payload_t": 227},
+  "road": [[0, 0]],
+  "mission": [{"t": 1, "target_kph": 35}],
+  "faults": [
+    {"type": "drop", "message": "WheelSpeeds", "t": 50},
+    {"type": "gnss_invalid", "t": 100}
+  ],
+  "expect": [
+    {"check": "fault_raised", "fault": "WheelSpeedTimeout", "from_s": 50, "within_s": 0.1},
+    {"check": "state_never", "state": "SAFE_STOP", "from_s": 0, "to_s": 100},
+    {"check": "speed_between", "max_kph": 20.5, "from_s": 70, "to_s": 100},
+    {"check": "estimate_error", "limit_kph": 1.0, "from_s": 1, "to_s": 100},
+    {"check": "state_reached", "state": "SAFE_STOP", "from_s": 100, "within_s": 0.6},
+    {"check": "stopped_by", "by_s": 115},
+    {"check": "max_decel", "limit_mps2": 1.3}
+  ]
+}

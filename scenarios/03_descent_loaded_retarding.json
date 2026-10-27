@@ -1,0 +1,19 @@
+{
+  "name": "descent_loaded_retarding",
+  "description": "Loaded truck goes down a 10% ramp at 30 km/h. The electric drive retards (dynamic braking) so the service brakes stay cold; they only come in for the final stop on the slope.",
+  "duration_s": 150,
+  "truck": {"payload_t": 227},
+  "road": [[0, 0], [60, 0], [100, -10], [3000, -10]],
+  "mission": [
+    {"t": 1, "target_kph": 30},
+    {"t": 110, "target_kph": 0}
+  ],
+  "expect": [
+    {"check": "speed_between", "max_kph": 30.8, "from_s": 0, "to_s": 110},
+    {"check": "speed_settles", "target_kph": 30, "tolerance_kph": 0.6, "from_s": 50, "to_s": 110},
+    {"check": "max_brake", "limit_pct": 1, "from_s": 35, "to_s": 110},
+    {"check": "stopped_by", "by_s": 135},
+    {"check": "max_decel", "limit_mps2": 1.0},
+    {"check": "fault_never", "fault": "any_critical", "from_s": 1}
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "name": "flat_cruise_loaded",
+  "description": "Loaded truck (227 t payload) pulls away on a flat haul road and holds 40 km/h, then stops on command.",
+  "duration_s": 120,
+  "truck": {"payload_t": 227},
+  "road": [[0, 0]],
+  "mission": [
+    {"t": 1, "target_kph": 40},
+    {"t": 90, "target_kph": 0}
+  ],
+  "expect": [
+    {"check": "state_reached", "state": "DRIVING", "from_s": 1, "within_s": 0.2},
+    {"check": "speed_settles", "target_kph": 40, "tolerance_kph": 0.5, "from_s": 45, "to_s": 90},
+    {"check": "max_overshoot", "target_kph": 40, "limit_kph": 0.8, "to_s": 90},
+    {"check": "estimate_error", "limit_kph": 0.6},
+    {"check": "max_decel", "limit_mps2": 0.9},
+    {"check": "stopped_by", "by_s": 110},
+    {"check": "state_reached", "state": "READY", "from_s": 90, "within_s": 25},
+    {"check": "fault_never", "fault": "any_critical", "from_s": 1}
+  ]
+}

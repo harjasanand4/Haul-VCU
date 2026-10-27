@@ -1,0 +1,15 @@
+{
+  "name": "wheel_slip_wet_road",
+  "description": "Loaded truck pulls away across a wet, slick stretch of road (grip 0.08). The rear wheels spin; the VCU detects it from the driven vs undriven axle speeds, cuts traction until they grip again, and keeps estimating speed from the undriven front axle.",
+  "duration_s": 120,
+  "truck": {"payload_t": 227},
+  "road": [[0, 0]],
+  "wet_patches": [{"from_m": 15, "to_m": 140, "mu": 0.08}],
+  "mission": [{"t": 1, "target_kph": 35}],
+  "expect": [
+    {"check": "fault_raised", "fault": "WheelSlip", "from_s": 1, "within_s": 20},
+    {"check": "estimate_error", "limit_kph": 0.8, "from_s": 1},
+    {"check": "speed_settles", "target_kph": 35, "tolerance_kph": 0.6, "from_s": 80},
+    {"check": "fault_never", "fault": "any_critical", "from_s": 1}
+  ]
+}

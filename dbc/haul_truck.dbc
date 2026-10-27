@@ -1,0 +1,83 @@
+VERSION "1.0"
+
+
+NS_ :
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	BA_DEF_DEF_
+
+BS_:
+
+BU_: TRUCK VCU FMS
+
+
+BO_ 256 WheelSpeeds: 8 TRUCK
+ SG_ RearLeftSpeed : 0|16@1+ (0.01,0) [0|655.35] "km/h" VCU
+ SG_ RearRightSpeed : 16|16@1+ (0.01,0) [0|655.35] "km/h" VCU
+ SG_ FrontAxleSpeed : 32|16@1+ (0.01,0) [0|655.35] "km/h" VCU
+ SG_ WheelSpeeds_Counter : 48|4@1+ (1,0) [0|15] "" VCU
+ SG_ WheelSpeeds_CRC : 56|8@1+ (1,0) [0|255] "" VCU
+
+BO_ 257 Imu: 8 TRUCK
+ SG_ LongAccel : 0|16@1- (0.001,0) [-32.768|32.767] "m/s2" VCU
+ SG_ Pitch : 16|16@1- (0.01,0) [-327.68|327.67] "deg" VCU
+ SG_ Imu_Counter : 48|4@1+ (1,0) [0|15] "" VCU
+ SG_ Imu_CRC : 56|8@1+ (1,0) [0|255] "" VCU
+
+BO_ 258 Powertrain: 8 TRUCK
+ SG_ TractionForceActual : 0|16@1- (0.1,0) [-3276.8|3276.7] "kN" VCU
+ SG_ BrakePressure : 16|8@1+ (0.5,0) [0|127.5] "bar" VCU
+ SG_ Payload : 24|16@1+ (0.1,0) [0|6553.5] "t" VCU
+ SG_ Powertrain_Counter : 48|4@1+ (1,0) [0|15] "" VCU
+ SG_ Powertrain_CRC : 56|8@1+ (1,0) [0|255] "" VCU
+
+BO_ 259 Gnss: 8 TRUCK
+ SG_ GnssSpeed : 0|16@1+ (0.01,0) [0|655.35] "km/h" VCU
+ SG_ GnssValid : 16|1@1+ (1,0) [0|1] "" VCU
+ SG_ Gnss_Counter : 48|4@1+ (1,0) [0|15] "" VCU
+ SG_ Gnss_CRC : 56|8@1+ (1,0) [0|255] "" VCU
+
+BO_ 512 VcuCommand: 8 VCU
+ SG_ TractionForceRequest : 7|16@0- (0.1,0) [-3276.8|3276.7] "kN" TRUCK
+ SG_ BrakeRequest : 23|8@0+ (0.5,0) [0|100] "%" TRUCK
+ SG_ VcuState : 31|4@0+ (1,0) [0|15] "" TRUCK,FMS
+ SG_ VcuCommand_Counter : 55|4@0+ (1,0) [0|15] "" TRUCK
+ SG_ VcuCommand_CRC : 63|8@0+ (1,0) [0|255] "" TRUCK
+
+BO_ 528 VcuStatus: 8 VCU
+ SG_ SpeedEstimate : 0|16@1+ (0.01,0) [0|655.35] "km/h" FMS
+ SG_ SpeedLimit : 16|8@1+ (0.5,0) [0|127.5] "km/h" FMS
+ SG_ FaultFlags : 24|16@1+ (1,0) [0|65535] "" FMS
+ SG_ VcuStatus_Counter : 48|4@1+ (1,0) [0|15] "" FMS
+ SG_ VcuStatus_CRC : 56|8@1+ (1,0) [0|255] "" FMS
+
+BO_ 768 MissionCommand: 8 FMS
+ SG_ TargetSpeed : 0|16@1+ (0.01,0) [0|80] "km/h" VCU
+ SG_ MissionMode : 16|2@1+ (1,0) [0|3] "" VCU
+ SG_ EStop : 18|1@1+ (1,0) [0|1] "" VCU
+ SG_ MissionCommand_Counter : 48|4@1+ (1,0) [0|15] "" VCU
+ SG_ MissionCommand_CRC : 56|8@1+ (1,0) [0|255] "" VCU
+
+
+CM_ BU_ TRUCK "Truck-side ECUs: drivetrain controller, brake controller, IMU, GNSS receiver.";
+CM_ BU_ VCU "Vehicle control unit (this project).";
+CM_ BU_ FMS "Fleet management system: sends the mission (target speed, mode, e-stop) over the mine network.";
+CM_ SG_ 256 FrontAxleSpeed "Undriven front axle. Doesn't slip under traction, so it is the main speed reference.";
+CM_ SG_ 258 TractionForceActual "Wheel force from the electric drive motors. Negative while retarding (dynamic braking).";
+CM_ SG_ 512 TractionForceRequest "Positive drives, negative requests electric retarding. Big-endian (Motorola) on purpose: real networks mix both.";
+CM_ SG_ 528 FaultFlags "Bitmask, see include/haul/vcu/faults.hpp.";
+
+BA_DEF_ BO_ "GenMsgCycleTime" INT 0 10000;
+BA_DEF_DEF_ "GenMsgCycleTime" 0;
+BA_ "GenMsgCycleTime" BO_ 256 10;
+BA_ "GenMsgCycleTime" BO_ 257 10;
+BA_ "GenMsgCycleTime" BO_ 258 20;
+BA_ "GenMsgCycleTime" BO_ 259 100;
+BA_ "GenMsgCycleTime" BO_ 512 10;
+BA_ "GenMsgCycleTime" BO_ 528 100;
+BA_ "GenMsgCycleTime" BO_ 768 100;
+
+VAL_ 512 VcuState 0 "INIT" 1 "READY" 2 "DRIVING" 3 "SAFE_STOP" 4 "EMERGENCY_STOP" 5 "FAULT" ;
+VAL_ 768 MissionMode 0 "STOP" 1 "AUTO" ;

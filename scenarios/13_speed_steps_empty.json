@@ -1,0 +1,20 @@
+{
+  "name": "speed_steps_empty",
+  "description": "Empty truck (165 t) on the return leg: target steps 20, 45 and 25 km/h. Same gains as the loaded runs: they are scheduled by mass.",
+  "duration_s": 170,
+  "truck": {"payload_t": 0},
+  "road": [[0, 0]],
+  "mission": [
+    {"t": 1, "target_kph": 20},
+    {"t": 40, "target_kph": 45},
+    {"t": 110, "target_kph": 25}
+  ],
+  "expect": [
+    {"check": "speed_settles", "target_kph": 20, "tolerance_kph": 0.4, "from_s": 25, "to_s": 40},
+    {"check": "max_overshoot", "target_kph": 45, "limit_kph": 0.6, "from_s": 40, "to_s": 110},
+    {"check": "speed_settles", "target_kph": 45, "tolerance_kph": 0.4, "from_s": 85, "to_s": 110},
+    {"check": "speed_settles", "target_kph": 25, "tolerance_kph": 0.4, "from_s": 140},
+    {"check": "max_decel", "limit_mps2": 0.9},
+    {"check": "fault_never", "fault": "any_critical", "from_s": 1}
+  ]
+}

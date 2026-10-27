@@ -1,0 +1,20 @@
+{
+  "name": "fms_link_loss_safe_stop",
+  "description": "The mine network drops: no mission commands from fleet management. Within 0.3 s the VCU flags MissionTimeout and brings the truck to a controlled stop, then latches FAULT. When the link returns with the operator holding STOP, the fault clears to READY.",
+  "duration_s": 120,
+  "truck": {"payload_t": 227},
+  "road": [[0, 0]],
+  "mission": [
+    {"t": 1, "target_kph": 40},
+    {"t": 95, "target_kph": 0, "mode": "STOP"}
+  ],
+  "faults": [{"type": "drop", "message": "MissionCommand", "t": 60, "duration_s": 30}],
+  "expect": [
+    {"check": "fault_raised", "fault": "MissionTimeout", "from_s": 60, "within_s": 0.35},
+    {"check": "state_reached", "state": "SAFE_STOP", "from_s": 60, "within_s": 0.4},
+    {"check": "max_decel", "limit_mps2": 1.3, "from_s": 60, "to_s": 90},
+    {"check": "stopped_by", "by_s": 75, "to_s": 95},
+    {"check": "state_reached", "state": "FAULT", "from_s": 60, "within_s": 16},
+    {"check": "state_reached", "state": "READY", "from_s": 95, "within_s": 1.5}
+  ]
+}
